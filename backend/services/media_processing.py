@@ -96,3 +96,83 @@ def cleanup_media_file(media: Media) -> list[str]:
             candidate.unlink()
     return refs
 
+
+def process_media_base64(db: Session, media_id: str) -> None:
+    """Process a media item that uses base64 storage.
+
+    Decodes the base64 data, generates a thumbnail, computes hashes,
+    and stores the thumbnail as base64 back in the database.
+    """
+    import base64
+
+    media = db.execute(select(Media).where(Media.id == media_id)).scalar_one()
+    if not media.base64_data:
+        media.processing_status = ProcessingStatus.failed.value
+        db.commit()
+        return
+
+    # Strip data URI prefix if present (e.g. "data:image/jpeg;base64,...")
+    raw_b64 = media.base64_data
+    if "," in raw_b64:
+        raw_b64 = raw_b64.split(",", 1)[1]
+
+    try:
+        file_bytes = base64.b64decode(raw_b64)
+    except Exception:
+        media.processing_status = ProcessingStatus.failed.value
+        db.commit()
+        return
+
+    # Compute hash for duplicate detection
+    digest = hashlib.sha256(file_bytes)
+    media.perceptual_hash = digest.hexdigest()
+
+    if media.media_type == "image":
+        try:
+            image = Image.open(io.BytesIO(file_bytes))
+            image = ImageOps.exif_transpose(image)
+            media.width, media.height = image.size
+
+            # Generate thumbnail as base64
+            thumb = image.copy()
+            thumb.thumbnail((360, 360))
+            thumb_buffer = io.BytesIO()
+            thumb.save(thumb_buffer, format="WEBP", quality=82)
+            thumb_bytes = thumb_buffer.getvalue()
+            thumb_b64 = base64.b64encode(thumb_bytes).decode("ascii")
+            media.thumbnail_base64 = f"data:image/webp;base64,{thumb_b64}"
+        except Exception:
+            media.processing_status = ProcessingStatus.failed.value
+            db.commit()
+            return
+    else:
+        # For video, create a placeholder thumbnail
+        from PIL import ImageDraw
+
+        thumb_image = Image.new("RGBA", (360, 360), color=(30, 41, 59, 255))
+        draw = ImageDraw.Draw(thumb_image)
+        draw.polygon([(140, 110), (140, 250), (240, 180)], fill=(226, 232, 240, 255))
+        thumb_buffer = io.BytesIO()
+        thumb_image.convert("RGB").save(thumb_buffer, format="WEBP", quality=82)
+        thumb_bytes = thumb_buffer.getvalue()
+        thumb_b64 = base64.b64encode(thumb_bytes).decode("ascii")
+        media.thumbnail_base64 = f"data:image/webp;base64,{thumb_b64}"
+
+    # Duplicate detection within the group
+    existing = db.execute(
+        select(Media)
+        .where(
+            Media.group_id == media.group_id,
+            Media.perceptual_hash == media.perceptual_hash,
+            Media.id != media.id,
+            Media.deleted_at.is_(None),
+        )
+        .limit(1)
+    ).scalar_one_or_none()
+    if existing is not None:
+        media.duplicate_of_id = existing.id
+
+    media.processing_status = ProcessingStatus.ready.value
+    db.commit()
+
+

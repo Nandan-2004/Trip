@@ -202,10 +202,19 @@ def get_shared_album(
     items = []
     url_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
     for item in media_items:
-        download_url = build_storage_download_url(item.storage_ref, url_expiry)
-        thumb_url = None
-        if item.thumbnail_ref:
+        # Prefer base64 data URIs; fall back to storage service URLs
+        if item.thumbnail_base64:
+            thumb_url = item.thumbnail_base64
+        elif item.thumbnail_ref:
             thumb_url = build_storage_download_url(item.thumbnail_ref, url_expiry)
+        else:
+            thumb_url = None
+
+        if item.base64_data:
+            download_url = item.base64_data
+        else:
+            download_url = build_storage_download_url(item.storage_ref, url_expiry)
+
         items.append({
             "id": item.id,
             "original_filename": item.original_filename,

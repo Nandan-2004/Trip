@@ -161,6 +161,8 @@ class Media(Base):
     video_duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     perceptual_hash: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     duplicate_of_id: Mapped[str | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"), nullable=True, index=True)
+    base64_data: Mapped[str | None] = mapped_column(Text, nullable=True)
+    thumbnail_base64: Mapped[str | None] = mapped_column(Text, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, index=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
 

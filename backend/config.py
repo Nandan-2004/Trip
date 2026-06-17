@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     upload_root: str = "uploads"
     download_root: str = "downloads"
     media_quota_bytes: int = 5 * 1024 * 1024 * 1024
-    max_upload_bytes: int = 200 * 1024 * 1024
+    max_upload_bytes: int = 5 * 1024 * 1024  # 5MB limit for base64 uploads
+    frontend_url: str = "http://localhost:5173"
 
     @property
     def storage_path(self) -> Path:

@@ -84,3 +84,11 @@ class CreateShareLinkRequest(BaseModel):
     password: str | None = Field(default=None, min_length=1)
     expires_in_hours: int | None = Field(default=None, gt=0)
 
+
+class MediaUploadBase64Request(BaseModel):
+    group_id: str
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: str = Field(min_length=1, max_length=100)
+    base64_data: str = Field(min_length=1)
+
+

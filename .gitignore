@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+web/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+
+# Database
+*.db
+
+# Storage
+storage-data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output - included so Hostinger can serve it
+# Uncomment the line below if you want to build on Hostinger instead
+# web/dist/
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+htmlcov/
+.coverage

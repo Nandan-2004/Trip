@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 from datetime import datetime, timedelta, timezone
@@ -12,15 +13,86 @@ from backend.config import get_settings
 from backend.database import get_db
 from backend.deps import get_current_user, require_group_member, require_group_admin
 from backend.models import Group, GroupMember, Media, MediaType, Notification, NotificationType, ProcessingStatus, User, Favorite
-from backend.schemas import MediaCursorResponse, MediaUploadConfirmRequest, MediaUploadInitRequest, ResolveDuplicateRequest
+from backend.schemas import MediaCursorResponse, MediaUploadBase64Request, MediaUploadConfirmRequest, MediaUploadInitRequest, ResolveDuplicateRequest
 from backend.security import decode_cursor, encode_cursor
 from backend.services.jobs import enqueue_job
-from backend.services.media_processing import inspect_media
+from backend.services.media_processing import inspect_media, process_media_base64
 from backend.services.storage_client import build_storage_download_url, build_storage_upload_url
 
 
 router = APIRouter(prefix="/media", tags=["media"])
 
+
+# ---------- Base64 Upload (primary path for Hostinger deployment) ----------
+
+@router.post("/upload-base64")
+def upload_base64(payload: MediaUploadBase64Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> dict:
+    """Upload a file as base64 data directly — no separate storage service needed."""
+    require_group_member(payload.group_id, user, db)
+    settings = get_settings()
+
+    # Decode to check real size
+    raw_b64 = payload.base64_data
+    if "," in raw_b64:
+        raw_b64 = raw_b64.split(",", 1)[1]
+    try:
+        file_bytes = base64.b64decode(raw_b64)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid base64 data")
+
+    size_bytes = len(file_bytes)
+    if size_bytes > settings.max_upload_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"File exceeds upload limit ({settings.max_upload_bytes // (1024*1024)}MB)")
+
+    # Check group quota
+    used = db.execute(select(func.coalesce(func.sum(Media.size_bytes), 0)).where(Media.group_id == payload.group_id, Media.deleted_at.is_(None))).scalar_one()
+    if used + size_bytes > settings.media_quota_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Group storage quota exceeded")
+
+    # Determine media type from content_type
+    ct = payload.content_type.lower()
+    if ct in {"image/jpeg", "image/png", "image/heic", "image/heif", "image/webp"}:
+        media_type = MediaType.image.value
+    elif ct in {"video/mp4", "video/quicktime"}:
+        media_type = MediaType.video.value
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
+
+    # Ensure the base64_data has the data URI prefix
+    if not payload.base64_data.startswith("data:"):
+        b64_with_prefix = f"data:{payload.content_type};base64,{payload.base64_data}"
+    else:
+        b64_with_prefix = payload.base64_data
+
+    safe_name = os.path.basename(payload.filename).replace("/", "_").replace("\\", "_")
+    storage_ref = f"{payload.group_id}/{datetime.now(timezone.utc).timestamp()}-{safe_name}"
+
+    media = Media(
+        group_id=payload.group_id,
+        uploader_id=user.id,
+        original_filename=safe_name,
+        media_type=media_type,
+        storage_ref=storage_ref,
+        base64_data=b64_with_prefix,
+        size_bytes=size_bytes,
+        processing_status=ProcessingStatus.processing.value,
+    )
+    db.add(media)
+    db.flush()
+
+    # Process inline (generate thumbnail, hash, etc.)
+    process_media_base64(db, media.id)
+
+    # Send notifications to group members
+    members = db.execute(select(GroupMember).where(GroupMember.group_id == payload.group_id)).scalars().all()
+    for member in members:
+        db.add(Notification(user_id=member.user_id, type=NotificationType.media_uploaded.value, payload=json.dumps({"group_id": payload.group_id, "media_id": media.id})))
+    db.commit()
+
+    return {"id": media.id, "processing_status": media.processing_status}
+
+
+# ---------- Legacy upload endpoints (kept for backward compatibility) ----------
 
 @router.post("/upload-url")
 def get_upload_url(payload: MediaUploadInitRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> dict:
@@ -65,6 +137,8 @@ def confirm_upload(payload: MediaUploadConfirmRequest, db: Session = Depends(get
     return {"id": media.id, "processing_status": media.processing_status}
 
 
+# ---------- Media listing ----------
+
 @router.get("/group/{group_id}")
 def list_group_media(group_id: str, cursor: str | None = None, limit: int = 50, search: str | None = None, filter_by: str = "all", sort: str = "newest", db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> MediaCursorResponse:
     require_group_member(group_id, user, db)
@@ -97,10 +171,22 @@ def list_group_media(group_id: str, cursor: str | None = None, limit: int = 50, 
     items = []
     url_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
     for item in rows:
-        thumb_url = None
-        if item.thumbnail_ref:
+        # Prefer base64 data URIs; fall back to storage service URLs
+        if item.thumbnail_base64:
+            thumb_url = item.thumbnail_base64
+        elif item.thumbnail_ref:
             thumb_url = build_storage_download_url(item.thumbnail_ref, url_expiry)
-        dl_url = build_storage_download_url(item.storage_ref, url_expiry)
+        else:
+            thumb_url = None
+
+        if item.base64_data:
+            dl_url = item.base64_data
+        else:
+            dl_url = build_storage_download_url(item.storage_ref, url_expiry)
+
+        # Check if user has favorited this item
+        fav = db.execute(select(Favorite).where(Favorite.media_id == item.id, Favorite.user_id == user.id)).scalar_one_or_none()
+
         items.append({
             "id": item.id,
             "uploader_id": item.uploader_id,
@@ -113,9 +199,13 @@ def list_group_media(group_id: str, cursor: str | None = None, limit: int = 50, 
             "processing_status": item.processing_status,
             "uploaded_at": item.uploaded_at,
             "size_bytes": item.size_bytes,
+            "duplicate_of_id": item.duplicate_of_id,
+            "favorited": fav is not None,
         })
     return MediaCursorResponse(items=items, next_cursor=next_cursor)
 
+
+# ---------- Download URL ----------
 
 @router.get("/{media_id}/download-url")
 def download_url(media_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> dict:
@@ -123,9 +213,16 @@ def download_url(media_id: str, db: Session = Depends(get_db), user: User = Depe
     if media is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
     require_group_member(media.group_id, user, db)
+
+    # Prefer base64 data URI
+    if media.base64_data:
+        return {"download_url": media.base64_data}
+
     url = build_storage_download_url(media.storage_ref, datetime.now(timezone.utc) + timedelta(minutes=10))
     return {"download_url": url}
 
+
+# ---------- Delete / Resolve duplicates ----------
 
 @router.delete("/{media_id}")
 def delete_media(media_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> dict:

@@ -273,7 +273,20 @@ export default function App() {
     }
   }
 
-  // Multi-File Upload Dropzone Handler
+  // Helper: read a file as base64 data URI
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Max file size: 5MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024
+
+  // Multi-File Upload via Base64
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files || event.dataTransfer.files)
     if (files.length === 0 || !selectedGroup) return
@@ -290,58 +303,35 @@ export default function App() {
 
     for (const item of newItems) {
       try {
+        // Validate file size
+        if (item.file.size > MAX_FILE_SIZE) {
+          setUploadQueue((prev) =>
+            prev.map((q) => (q.id === item.id ? { ...q, status: 'failed' } : q))
+          )
+          setError(`File "${item.name}" exceeds 5MB limit. Please resize before uploading.`)
+          continue
+        }
+
         setUploadQueue((prev) =>
-          prev.map((q) => (q.id === item.id ? { ...q, status: 'uploading' } : q))
+          prev.map((q) => (q.id === item.id ? { ...q, status: 'uploading', progress: 30 } : q))
         )
 
-        // Init upload url
-        const init = await api('/media/upload-url', {
+        // Read file as base64
+        const base64Data = await fileToBase64(item.file)
+
+        setUploadQueue((prev) =>
+          prev.map((q) => (q.id === item.id ? { ...q, progress: 60 } : q))
+        )
+
+        // Upload base64 to backend
+        await api('/media/upload-base64', {
           method: 'POST',
           token,
           body: {
             group_id: selectedGroup,
             filename: item.file.name,
             content_type: item.file.type || 'application/octet-stream',
-            size_bytes: item.file.size,
-          },
-        })
-
-        // Perform actual upload with XHR to track progress
-        const xhr = new XMLHttpRequest()
-        xhr.open('PUT', init.upload_url)
-        xhr.setRequestHeader('Content-Type', item.file.type || 'application/octet-stream')
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100)
-            setUploadQueue((prev) =>
-              prev.map((q) => (q.id === item.id ? { ...q, progress: pct } : q))
-            )
-          }
-        }
-
-        const uploadPromise = new Promise((resolve, reject) => {
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve()
-            } else {
-              reject(new Error('Storage upload failed'))
-            }
-          }
-          xhr.onerror = () => reject(new Error('Network error during upload'))
-        })
-
-        xhr.send(item.file)
-        await uploadPromise
-
-        // Confirm upload
-        await api('/media/confirm', {
-          method: 'POST',
-          token,
-          body: {
-            storage_ref: init.storage_ref,
-            original_filename: item.file.name,
-            size_bytes: item.file.size,
+            base64_data: base64Data,
           },
         })
 
@@ -371,51 +361,28 @@ export default function App() {
     )
 
     try {
-      const init = await api('/media/upload-url', {
+      if (queueItem.file.size > MAX_FILE_SIZE) {
+        setError(`File "${queueItem.name}" exceeds 5MB limit.`)
+        setUploadQueue((prev) =>
+          prev.map((q) => (q.id === queueId ? { ...q, status: 'failed' } : q))
+        )
+        return
+      }
+
+      const base64Data = await fileToBase64(queueItem.file)
+
+      setUploadQueue((prev) =>
+        prev.map((q) => (q.id === queueId ? { ...q, progress: 60 } : q))
+      )
+
+      await api('/media/upload-base64', {
         method: 'POST',
         token,
         body: {
           group_id: selectedGroup,
           filename: queueItem.file.name,
           content_type: queueItem.file.type || 'application/octet-stream',
-          size_bytes: queueItem.file.size,
-        },
-      })
-
-      const xhr = new XMLHttpRequest()
-      xhr.open('PUT', init.upload_url)
-      xhr.setRequestHeader('Content-Type', queueItem.file.type || 'application/octet-stream')
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100)
-          setUploadQueue((prev) =>
-            prev.map((q) => (q.id === queueId ? { ...q, progress: pct } : q))
-          )
-        }
-      }
-
-      const uploadPromise = new Promise((resolve, reject) => {
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve()
-          } else {
-            reject(new Error('Storage upload failed'))
-          }
-        }
-        xhr.onerror = () => reject(new Error('Network error during upload'))
-      })
-
-      xhr.send(queueItem.file)
-      await uploadPromise
-
-      await api('/media/confirm', {
-        method: 'POST',
-        token,
-        body: {
-          storage_ref: init.storage_ref,
-          original_filename: queueItem.file.name,
-          size_bytes: queueItem.file.size,
+          base64_data: base64Data,
         },
       })
 
@@ -1109,7 +1076,7 @@ export default function App() {
                 <span style={{ fontSize: '48px' }}>📁</span>
                 <h3>Drag & Drop files here or click to browse</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-                  Supports JPEG, PNG, HEIC images & MP4, MOV videos. Up to 200MB.
+                  Supports JPEG, PNG, HEIC images & MP4, MOV videos. Max 5MB per file.
                 </p>
                 <input
                   id="file-upload-input"
