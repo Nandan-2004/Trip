@@ -102,7 +102,7 @@ export default function App() {
       if (gs.length > 0 && !selectedGroup) {
         setSelectedGroup(gs[0].id)
       }
-      
+
       // Load friends and requests
       const fList = await api('/friends', { token })
       setFriends(fList)
@@ -364,7 +364,7 @@ export default function App() {
   const retryUpload = async (queueId) => {
     const queueItem = uploadQueue.find((q) => q.id === queueId)
     if (!queueItem) return
-    
+
     // Clear failure status
     setUploadQueue((prev) =>
       prev.map((q) => (q.id === queueId ? { ...q, status: 'uploading', progress: 0 } : q))
@@ -567,10 +567,10 @@ export default function App() {
             const downUrl = `${import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'}/storage/download/${resData.download_path}`
             // Try fetch storage scoped url
             const scopedUrlRes = await api(`/media/group/${selectedGroup}`, { token }) // dummy request to verify connection
-            
+
             // Build full download URL
             const finalUrl = `${import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'}/storage/download/${resData.download_path.replace('downloads/', '')}`
-            
+
             nextJobs.push({ ...job, status: 'completed', downloadUrl: finalUrl })
             setMessage(`ZIP Download ready!`)
           } else if (statusRes.status === 'failed') {
@@ -660,13 +660,13 @@ export default function App() {
   // Calculate Group Quota usage
   const quotaUsagePct = groupDetails
     ? Math.min(
-        100,
-        Math.round(
-          (media.reduce((acc, item) => acc + item.size_bytes, 0) /
-            (5 * 1024 * 1024 * 1024)) *
-            100
-        )
+      100,
+      Math.round(
+        (media.reduce((acc, item) => acc + item.size_bytes, 0) /
+          (5 * 1024 * 1024 * 1024)) *
+        100
       )
+    )
     : 0
 
   return (
@@ -710,7 +710,7 @@ export default function App() {
             onClick={async () => {
               try {
                 await api('/auth/logout', { method: 'POST', token })
-              } catch (e) {}
+              } catch (e) { }
               localStorage.clear()
               setToken('')
             }}
@@ -1035,7 +1035,7 @@ export default function App() {
                         return (
                           <div key={item.id} className="media-tile" onClick={() => {
                             if (isMultiSelectMode) {
-                              toggleSelectMedia(item.id, { stopPropagation: () => {} })
+                              toggleSelectMedia(item.id, { stopPropagation: () => { } })
                             } else {
                               setActiveMediaItem(item)
                             }
@@ -1131,7 +1131,7 @@ export default function App() {
                         <span style={{ width: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.name}
                         </span>
-                        
+
                         <div className="progress-bar-container">
                           <div
                             className="progress-bar-fill"
@@ -1315,7 +1315,7 @@ export default function App() {
                 <button className="btn-primary" onClick={() => handleSingleDownload(activeMediaItem)}>
                   Download Original File
                 </button>
-                
+
                 <button className="btn-secondary" onClick={(e) => toggleFavorite(activeMediaItem.id, e)}>
                   {activeMediaItem.favorited ? '❤️ Remove from Favorites' : '🤍 Add to Favorites'}
                 </button>
@@ -1372,7 +1372,7 @@ function PublicGallery({ shareToken, onClose }) {
       const url = `/groups/share-links/${shareToken}${pwd ? `?password=${encodeURIComponent(pwd)}` : ''}`
       const res = await fetch(`${import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'}${url}`)
       const data = await res.json()
-      
+
       if (res.status === 401) {
         setPasswordRequired(true)
         return
@@ -1381,7 +1381,7 @@ function PublicGallery({ shareToken, onClose }) {
         setError(data.detail || 'Failed to load album')
         return
       }
-      
+
       setGroup(data.group)
       setMedia(data.media)
       setPasswordRequired(false)
