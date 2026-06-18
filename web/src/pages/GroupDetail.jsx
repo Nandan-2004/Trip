@@ -33,12 +33,16 @@ export default function GroupDetail() {
   const fileInput = useRef();
   const loadingMore = useRef(false);
 
+  const [friends, setFriends] = useState([]);
+  
   const isAdmin = group?.my_role === "admin";
 
   const loadGroup = async () => {
     try {
       const data = await api(`/groups/${groupId}`);
       setGroup(data);
+      const friendsData = await api(`/friends`);
+      setFriends(friendsData);
     } catch (e) {
       toast.error("Failed to load trip");
       nav("/dashboard");
@@ -69,6 +73,10 @@ export default function GroupDetail() {
     
     for (let i = 0; i < fileList.length; i++) {
       const qItem = queue[i];
+      if (qItem.file.size > 5 * 1024 * 1024) {
+        setUploading(prev => prev.map(x => x.id === qItem.id ? { ...x, status: "error", error: "File exceeds 5MB limit" } : x));
+        continue;
+      }
       setUploading(prev => prev.map(x => x.id === qItem.id ? { ...x, status: "uploading" } : x));
       
       try {
@@ -208,9 +216,29 @@ export default function GroupDetail() {
                     <Button data-testid="invite-member-btn" variant="outline" className="rounded-none h-10"><UserPlus size={14} strokeWidth={2} className="mr-2"/>Invite</Button>
                   </DialogTrigger>
                   <DialogContent className="rounded-none border-border max-w-sm">
-                    <DialogHeader><DialogTitle className="font-display font-black text-xl">Invite by friend code</DialogTitle></DialogHeader>
-                    <Input data-testid="invite-code-input" value={inviteCode} onChange={e => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000" className="rounded-none font-mono text-2xl tracking-widest text-center"/>
-                    <DialogFooter><Button data-testid="invite-send-btn" onClick={sendInvite} className="rounded-none accent-bg hover:opacity-90">Send invite</Button></DialogFooter>
+                    <DialogHeader><DialogTitle className="font-display font-black text-xl">Invite Friends</DialogTitle></DialogHeader>
+                    <div className="flex flex-col gap-4 py-2 max-h-[300px] overflow-y-auto">
+                      {friends.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">You have no friends yet.</p>
+                      ) : (
+                        friends.map(f => (
+                          <div key={f.id} className="flex items-center justify-between p-2 border border-border/50 rounded-md">
+                            <div>
+                              <div className="font-bold text-sm">{f.name}</div>
+                              <div className="text-xs text-muted-foreground font-mono">{f.friend_code}</div>
+                            </div>
+                            <Button size="sm" onClick={() => { setInviteCode(f.friend_code); setTimeout(sendInvite, 0); }} className="rounded-none accent-bg">Invite</Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="border-t border-border pt-4 mt-2">
+                      <p className="text-xs text-muted-foreground mb-2">Or invite by code:</p>
+                      <div className="flex gap-2">
+                        <Input data-testid="invite-code-input" value={inviteCode} onChange={e => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000" className="rounded-none font-mono text-center flex-1"/>
+                        <Button data-testid="invite-send-btn" onClick={sendInvite} className="rounded-none accent-bg hover:opacity-90">Send</Button>
+                      </div>
+                    </div>
                   </DialogContent>
                 </Dialog>
                 <Button data-testid="admin-settings-btn" variant="outline" onClick={() => setAdminOpen(true)} className="rounded-none h-10 w-10 p-0"><Settings size={14} strokeWidth={2}/></Button>

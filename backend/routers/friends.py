@@ -48,8 +48,12 @@ def send_friend_request(payload: FriendCodeSearchRequest, db: Session = Depends(
 
 @router.get("/requests/inbox")
 def inbox(db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> list[dict]:
-    requests = db.execute(select(FriendRequest).where(FriendRequest.receiver_id == user.id, FriendRequest.status == FriendRequestStatus.pending.value)).scalars().all()
-    return [{"id": item.id, "sender_id": item.sender_id, "created_at": item.created_at} for item in requests]
+    requests = db.execute(
+        select(FriendRequest, User.name)
+        .join(User, User.id == FriendRequest.sender_id)
+        .where(FriendRequest.receiver_id == user.id, FriendRequest.status == FriendRequestStatus.pending.value)
+    ).all()
+    return [{"id": item.id, "sender_id": item.sender_id, "sender_name": name, "created_at": item.created_at} for item, name in requests]
 
 
 @router.post("/requests/{request_id}/accept")

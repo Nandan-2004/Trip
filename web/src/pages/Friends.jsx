@@ -76,7 +76,7 @@ export default function Friends() {
                       <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                         <User className="w-4 h-4 text-muted-foreground" />
                       </div>
-                      <span className="text-sm font-medium">User: {req.sender_id.substring(0, 8)}...</span>
+                      <span className="text-sm font-medium">{req.sender_name} wants to be friends</span>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0 rounded-full border-green-500/30 text-green-500 hover:bg-green-500/10 hover:border-green-500/50 transition-colors" onClick={() => handleRequest(req.id, 'accept')}><Check className="w-4 h-4"/></Button>
