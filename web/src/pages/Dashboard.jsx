@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Image, Users, Calendar, PlusCircle, DownloadCloud, Check, X } from "lucide-react";
+import { ImageIcon, Users, Calendar, PlusCircle, DownloadCloud, Check, X } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -113,7 +113,7 @@ export default function Dashboard() {
           {groups.length === 0 ? (
             <div className="bg-surface p-16 text-center border border-border-color shadow-lg flex flex-col items-center rounded-2xl">
               <div className="w-20 h-20 rounded-full bg-surface-raised flex items-center justify-center mb-6">
-                <Image className="w-10 h-10 text-muted opacity-80" />
+                <ImageIcon className="w-10 h-10 text-muted opacity-80" />
               </div>
               <h3 className="text-xl font-display font-bold mb-3 text-text-primary">No trips yet</h3>
               <p className="text-base text-muted max-w-md leading-relaxed font-medium">Create your first adventure above.</p>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Lock, Image as ImageIcon, Download, Video, Calendar, ArrowLeft } from "lucide-react";
+import { Lock, ImageIcon, Download, Video, Calendar, ArrowLeft } from "lucide-react";
 
 export default function PublicGallery() {
   const { token } = useParams();

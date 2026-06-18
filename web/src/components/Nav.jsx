@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { api } from "@/api";
-import { Bell, Moon, Sun, User, LogOut, Image, Users } from "lucide-react";
+import { Bell, Moon, Sun, User, LogOut, ImageIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Nav() {
@@ -111,7 +111,7 @@ export default function Nav() {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-[12px] border-t border-border-color flex justify-around items-center h-16 pb-safe">
         <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/dashboard") ? "text-accent-primary" : "text-muted hover:text-text-primary"}`}>
-          <Image className="h-6 w-6 mb-1" />
+          <ImageIcon className="h-6 w-6 mb-1" />
           <span className="text-[10px] font-medium">Trips</span>
         </Link>
         <Link to="/friends" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/friends") ? "text-accent-primary" : "text-muted hover:text-text-primary"}`}>
