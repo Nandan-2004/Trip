@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { api } from "@/api";
-import { Bell, Moon, Sun, User, LogOut } from "lucide-react";
+import { Bell, Moon, Sun, User, LogOut, Image, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Nav() {
