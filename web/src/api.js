@@ -1,11 +1,13 @@
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
+export const API = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
+export const mediaFileUrl = (id) => `${API}/storage/download/${id}`
 export async function api(path, { method = 'GET', body, token } = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const finalToken = token || localStorage.getItem('access_token');
+  const res = await fetch(`${API}${path}`, {
     method,
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(finalToken ? { Authorization: `Bearer ${finalToken}` } : {}),
       ...(path.includes('/refresh') || path.includes('/logout') ? { 'X-CSRF-Token': localStorage.getItem('csrf_token') ?? '' } : {}),
     },
     credentials: 'include',

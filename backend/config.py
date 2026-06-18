@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     access_token_minutes: int = 15
     refresh_token_days: int = 30
     password_pepper: str = ""
-    allowed_origins: str = "http://localhost:5173"
+    allowed_origins: str = "http://localhost:5173,http://localhost:5174"
     storage_url: str = "http://localhost:8001"
     storage_root: str = "./storage-data"
     upload_root: str = "uploads"

@@ -52,6 +52,11 @@ def get_group(group_id: str, db: Session = Depends(get_db), user: User = Depends
     if group is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
     members = db.execute(select(GroupMember).where(GroupMember.group_id == group.id)).scalars().all()
+    
+    # Calculate storage used and media count
+    storage_used = db.execute(select(func.sum(Media.size_bytes)).where(Media.group_id == group.id, Media.deleted_at.is_(None))).scalar() or 0
+    media_count = db.execute(select(func.count(Media.id)).where(Media.group_id == group.id, Media.deleted_at.is_(None))).scalar() or 0
+
     return {
         "id": group.id,
         "name": group.name,
@@ -59,6 +64,9 @@ def get_group(group_id: str, db: Session = Depends(get_db), user: User = Depends
         "trip_date": group.trip_date,
         "cover_image_ref": group.cover_image_ref,
         "members": [{"user_id": m.user_id, "role": m.role} for m in members],
+        "media_count": media_count,
+        "storage_used": storage_used,
+        "storage_quota": 5368709120, # 5 GB
     }
 
 
