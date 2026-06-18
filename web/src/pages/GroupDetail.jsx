@@ -80,13 +80,56 @@ export default function GroupDetail() {
       setUploading(prev => prev.map(x => x.id === qItem.id ? { ...x, status: "uploading" } : x));
       
       try {
-        // Read file as base64
-        const base64Data = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(qItem.file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = error => reject(error);
-        });
+        // Resize image on client side to prevent backend Out-Of-Memory crashes
+        const getResizedBase64 = async (file) => {
+          if (!file.type.startsWith('image/')) {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.readAsDataURL(file);
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+            });
+          }
+
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+              const img = new window.Image();
+              img.src = e.target.result;
+              img.onload = () => {
+                const MAX_WIDTH = 1600;
+                const MAX_HEIGHT = 1600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                  if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                  }
+                } else {
+                  if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                  }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // Compress to WebP or JPEG to save massive space
+                resolve(canvas.toDataURL('image/webp', 0.8));
+              };
+              img.onerror = reject;
+            };
+            reader.onerror = reject;
+          });
+        };
+
+        const base64Data = await getResizedBase64(qItem.file);
 
         // Send to base64 upload endpoint
         await api(`/media/upload-base64`, { 
@@ -94,7 +137,7 @@ export default function GroupDetail() {
           body: {
             group_id: groupId,
             filename: qItem.name,
-            content_type: qItem.file.type,
+            content_type: qItem.file.type.startsWith('image/') ? 'image/webp' : (qItem.file.type || "application/octet-stream"),
             base64_data: base64Data
           }
         });

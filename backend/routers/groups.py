@@ -57,12 +57,15 @@ def get_group(group_id: str, db: Session = Depends(get_db), user: User = Depends
     storage_used = db.execute(select(func.sum(Media.size_bytes)).where(Media.group_id == group.id, Media.deleted_at.is_(None))).scalar() or 0
     media_count = db.execute(select(func.count(Media.id)).where(Media.group_id == group.id, Media.deleted_at.is_(None))).scalar() or 0
 
+    my_member = db.execute(select(GroupMember).where(GroupMember.group_id == group.id, GroupMember.user_id == user.id)).scalar_one_or_none()
+    
     return {
         "id": group.id,
         "name": group.name,
         "description": group.description,
         "trip_date": group.trip_date,
         "cover_image_ref": group.cover_image_ref,
+        "my_role": my_member.role if my_member else None,
         "members": [{"user_id": m.user_id, "role": m.role} for m in members],
         "media_count": media_count,
         "storage_used": storage_used,
