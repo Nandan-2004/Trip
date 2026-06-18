@@ -51,9 +51,9 @@ export default function Friends() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-transparent pb-20 md:pb-0">
       <Nav />
-      <div className="p-6 md:p-10 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 animate-in">
+      <div className="p-4 md:p-10 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 animate-in">
         
         <div className="flex flex-col gap-6">
           <div className="glass widget-card p-6 border border-border/50 shadow-lg relative overflow-hidden">

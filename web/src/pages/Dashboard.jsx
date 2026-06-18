@@ -58,9 +58,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-transparent pb-20 md:pb-0">
       <Nav />
-      <div className="p-6 md:p-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 animate-in">
+      <div className="p-4 md:p-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 animate-in">
         
         {/* Left column: Create Group & Invites */}
         <div className="flex flex-col gap-6">

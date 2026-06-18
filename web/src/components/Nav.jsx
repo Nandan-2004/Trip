@@ -47,12 +47,12 @@ export default function Nav() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 h-16 flex items-center justify-between">
       <div className="flex gap-6 md:gap-10">
-        <Link to="/dashboard" className="font-display font-black text-xl tracking-tight flex items-center space-x-2">
+        <Link to="/dashboard" className="font-display font-black text-xl tracking-tight flex items-center space-x-2 text-accent">
           <span>TripShare</span>
         </Link>
         <nav className="hidden md:flex gap-6">
-          <Link to="/dashboard" className={`text-sm font-medium transition-colors hover:text-foreground/80 ${location.pathname.startsWith("/dashboard") ? "text-foreground" : "text-foreground/60"}`}>Dashboard</Link>
-          <Link to="/friends" className={`text-sm font-medium transition-colors hover:text-foreground/80 ${location.pathname.startsWith("/friends") ? "text-foreground" : "text-foreground/60"}`}>Friends</Link>
+          <Link to="/dashboard" className={`text-sm font-bold transition-colors hover:text-accent ${location.pathname.startsWith("/dashboard") ? "text-accent border-b-2 border-accent" : "text-foreground/60"}`}>Dashboard</Link>
+          <Link to="/friends" className={`text-sm font-bold transition-colors hover:text-accent ${location.pathname.startsWith("/friends") ? "text-accent border-b-2 border-accent" : "text-foreground/60"}`}>Friends</Link>
         </nav>
       </div>
       
@@ -109,6 +109,22 @@ export default function Nav() {
           <LogOut className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur border-t border-border flex justify-around items-center h-16 pb-safe">
+        <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/dashboard") ? "text-accent" : "text-muted-foreground"}`}>
+          <Image className="h-6 w-6 mb-1" />
+          <span className="text-[10px] font-bold">Trips</span>
+        </Link>
+        <Link to="/friends" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/friends") ? "text-accent" : "text-muted-foreground"}`}>
+          <Users className="h-6 w-6 mb-1" />
+          <span className="text-[10px] font-bold">Friends</span>
+        </Link>
+        <Link to="/profile" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/profile") ? "text-accent" : "text-muted-foreground"}`}>
+          <User className="h-6 w-6 mb-1" />
+          <span className="text-[10px] font-bold">Profile</span>
+        </Link>
+      </nav>
     </header>
   );
 }

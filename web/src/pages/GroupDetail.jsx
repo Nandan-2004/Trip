@@ -184,9 +184,9 @@ export default function GroupDetail() {
   if (!group) return <div className="min-h-screen"><Nav/><div className="p-10 label-caps text-muted-foreground">Loading…</div></div>;
 
   return (
-    <div className="min-h-screen" onDragOver={e => e.preventDefault()} onDrop={onDrop}>
+    <div className="min-h-screen pb-20 md:pb-0" onDragOver={e => e.preventDefault()} onDrop={onDrop}>
       <Nav />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
         <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
           <div>
             <div className="label-caps text-muted-foreground mb-3 font-mono">{group.trip_date || "—"}</div>
