@@ -45,42 +45,42 @@ export default function Nav() {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full border-b border-border-color bg-background/80 backdrop-blur-[12px] px-4 md:px-8 h-16 flex items-center justify-between">
       <div className="flex gap-6 md:gap-10">
-        <Link to="/dashboard" className="font-display font-black text-xl tracking-tight flex items-center space-x-2 text-accent">
+        <Link to="/dashboard" className="font-display font-black text-2xl tracking-tight flex items-center space-x-2 text-text-primary">
           <span>TripShare</span>
+          <span className="text-accent-primary text-xl">✈️</span>
         </Link>
-        <nav className="hidden md:flex gap-6">
-          <Link to="/dashboard" className={`text-sm font-bold transition-colors hover:text-accent ${location.pathname.startsWith("/dashboard") ? "text-accent border-b-2 border-accent" : "text-foreground/60"}`}>Dashboard</Link>
-          <Link to="/friends" className={`text-sm font-bold transition-colors hover:text-accent ${location.pathname.startsWith("/friends") ? "text-accent border-b-2 border-accent" : "text-foreground/60"}`}>Friends</Link>
+        <nav className="hidden md:flex gap-8 items-center">
+          <Link to="/dashboard" className={`text-sm font-medium transition-colors hover:text-text-primary border-b-2 py-5 ${location.pathname.startsWith("/dashboard") ? "text-text-primary border-accent-primary" : "text-muted border-transparent"}`}>Dashboard</Link>
+          <Link to="/friends" className={`text-sm font-medium transition-colors hover:text-text-primary border-b-2 py-5 ${location.pathname.startsWith("/friends") ? "text-text-primary border-accent-primary" : "text-muted border-transparent"}`}>Friends</Link>
         </nav>
       </div>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <div className="relative">
           <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowNotifs(!showNotifs)}>
-            <Bell className="h-5 w-5 text-muted-foreground" />
+            <Bell className="h-5 w-5 text-muted hover:text-text-primary transition-colors" />
             {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
-                {unreadCount}
+              <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 text-transparent rounded-full text-[10px] animate-pulse">
               </span>
             )}
           </Button>
 
           {showNotifs && (
-            <div className="absolute right-0 mt-2 w-80 glass border border-border shadow-md rounded-md z-50 overflow-hidden">
-              <div className="p-3 border-b border-border flex justify-between items-center bg-muted/50">
-                <span className="font-semibold text-sm">Notifications ({unreadCount})</span>
-                <button className="text-xs text-muted-foreground hover:text-foreground" onClick={markAllRead}>Mark all read</button>
+            <div className="absolute right-0 mt-2 w-80 bg-surface border border-border-color shadow-glow rounded-xl z-50 overflow-hidden">
+              <div className="p-4 border-b border-border-color flex justify-between items-center bg-surface-raised">
+                <span className="font-semibold text-sm text-text-primary">Notifications ({unreadCount})</span>
+                <button className="text-xs text-accent-secondary hover:text-white transition-colors" onClick={markAllRead}>Mark all read</button>
               </div>
               <div className="max-h-80 overflow-y-auto p-2 flex flex-col gap-2">
                 {notifications.length === 0 ? (
-                  <div className="text-center text-sm text-muted-foreground py-4">No notifications yet</div>
+                  <div className="text-center text-sm text-muted py-6">No new notifications</div>
                 ) : (
                   notifications.map(n => (
-                    <div key={n.id} className={`p-3 text-sm rounded-md border border-border ${n.read_at ? "bg-transparent" : "bg-accent/10"}`}>
-                      <div className="text-xs text-muted-foreground mb-1">{new Date(n.created_at).toLocaleString()}</div>
-                      <div>
+                    <div key={n.id} className={`p-3 text-sm rounded-lg border border-border-color ${n.read_at ? "bg-transparent" : "bg-accent-primary/10"}`}>
+                      <div className="text-xs text-muted mb-1">{new Date(n.created_at).toLocaleString()}</div>
+                      <div className="text-text-primary font-medium">
                         {n.type === 'media_uploaded' && 'New media was uploaded to your group'}
                         {n.type === 'member_joined' && 'A member joined your group'}
                         {n.type === 'group_invite' && 'You were invited to join a group'}
@@ -97,13 +97,11 @@ export default function Nav() {
 
         <Link to="/profile">
           <Button variant="ghost" size="icon" className="rounded-full">
-            <User className="h-5 w-5 text-muted-foreground" />
+            <User className="h-5 w-5 text-muted hover:text-text-primary transition-colors" />
           </Button>
         </Link>
 
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-          {theme === 'dark' ? <Sun className="h-5 w-5 text-muted-foreground" /> : <Moon className="h-5 w-5 text-muted-foreground" />}
-        </Button>
+        {/* Removed theme toggle since design is dark-mode only */}
 
         <Button variant="ghost" size="icon" className="rounded-full hover:text-red-500 hover:bg-red-500/10" onClick={logout}>
           <LogOut className="h-5 w-5" />
@@ -111,18 +109,18 @@ export default function Nav() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur border-t border-border flex justify-around items-center h-16 pb-safe">
-        <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/dashboard") ? "text-accent" : "text-muted-foreground"}`}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-[12px] border-t border-border-color flex justify-around items-center h-16 pb-safe">
+        <Link to="/dashboard" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/dashboard") ? "text-accent-primary" : "text-muted hover:text-text-primary"}`}>
           <Image className="h-6 w-6 mb-1" />
-          <span className="text-[10px] font-bold">Trips</span>
+          <span className="text-[10px] font-medium">Trips</span>
         </Link>
-        <Link to="/friends" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/friends") ? "text-accent" : "text-muted-foreground"}`}>
+        <Link to="/friends" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/friends") ? "text-accent-primary" : "text-muted hover:text-text-primary"}`}>
           <Users className="h-6 w-6 mb-1" />
-          <span className="text-[10px] font-bold">Friends</span>
+          <span className="text-[10px] font-medium">Friends</span>
         </Link>
-        <Link to="/profile" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/profile") ? "text-accent" : "text-muted-foreground"}`}>
+        <Link to="/profile" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname.startsWith("/profile") ? "text-accent-primary" : "text-muted hover:text-text-primary"}`}>
           <User className="h-6 w-6 mb-1" />
-          <span className="text-[10px] font-bold">Profile</span>
+          <span className="text-[10px] font-medium">Profile</span>
         </Link>
       </nav>
     </header>

@@ -224,28 +224,30 @@ export default function GroupDetail() {
     } catch (e) { toast.error(e.message || "Failed"); }
   };
 
-  if (!group) return <div className="min-h-screen"><Nav/><div className="p-10 label-caps text-muted-foreground">Loading…</div></div>;
+  if (!group) return <div className="min-h-screen bg-background"><Nav/><div className="p-10 font-mono text-muted text-center animate-pulse">Loading adventure...</div></div>;
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0" onDragOver={e => e.preventDefault()} onDrop={onDrop}>
+    <div className="min-h-screen bg-background pb-20 md:pb-0 relative overflow-hidden" onDragOver={e => e.preventDefault()} onDrop={onDrop}>
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#8B8FA8 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
       <Nav />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
-        <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
-          <div>
-            <div className="label-caps text-muted-foreground mb-3 font-mono">{group.trip_date || "—"}</div>
-            <h1 className="font-display font-black text-4xl sm:text-5xl tracking-tighter" data-testid="group-title">{group.name}</h1>
-            {group.description && <p className="text-sm text-muted-foreground mt-3 max-w-2xl">{group.description}</p>}
-            <div className="flex flex-col gap-2 mt-6">
-              <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
-                <span>{group.members?.length} members</span>
-                <span>·</span>
-                <span>{group.media_count} items</span>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 relative z-10 animate-fadeInUp">
+        <div className="flex items-end justify-between gap-4 flex-wrap mb-8 bg-surface p-8 border border-border-color rounded-3xl shadow-2xl relative overflow-hidden">
+          <div className="absolute -top-32 -right-32 w-64 h-64 bg-accent-primary/20 rounded-full blur-[80px] pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="text-accent-secondary mb-3 font-bold font-mono text-sm tracking-widest uppercase">{group.trip_date || "—"}</div>
+            <h1 className="font-display font-black text-4xl sm:text-5xl tracking-tighter text-text-primary" data-testid="group-title">{group.name}</h1>
+            {group.description && <p className="text-base text-muted font-medium mt-3 max-w-2xl">{group.description}</p>}
+            <div className="flex flex-col gap-2 mt-8">
+              <div className="flex items-center gap-4 text-xs font-mono font-bold text-muted">
+                <span className="bg-surface-raised px-2 py-1 rounded-md border border-border-color">{group.members?.length} members</span>
+                <span className="bg-surface-raised px-2 py-1 rounded-md border border-border-color">{group.media_count} items</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-48 h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full accent-bg" style={{ width: `${Math.min(100, (group.storage_used / group.storage_quota) * 100)}%` }} />
+              <div className="flex items-center gap-3 mt-2">
+                <div className="w-48 h-2 bg-surface-raised rounded-full overflow-hidden border border-border-color">
+                  <div className="h-full bg-gradient-to-r from-accent-primary to-accent-secondary" style={{ width: `${Math.min(100, (group.storage_used / group.storage_quota) * 100)}%` }} />
                 </div>
-                <span className="text-xs font-mono font-medium">
+                <span className="text-xs font-mono font-medium text-muted">
                   {(group.storage_used / 1024 / 1024).toFixed(1)} / {(group.storage_quota / 1024 / 1024 / 1024).toFixed(0)} GB Used
                 </span>
               </div>
