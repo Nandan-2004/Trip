@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Upload, Heart, Download, Trash2, X, ChevronLeft, ChevronRight, Settings, UserPlus, Play, Check } from "lucide-react";
-import { api, API, mediaFileUrl } from "@/api";
+import { api } from "@/api";
 import Nav from "@/components/Nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -377,7 +377,7 @@ export default function GroupDetail() {
                 <div className="grid-photos" data-testid={`gallery-grid-${groupName}`}>
                   {groupItems.map(m => (
                     <div key={m.id} className="group relative aspect-square bg-muted/50 overflow-hidden cursor-pointer shadow-sm hover:shadow-lg transition-all rounded-md" data-testid={`media-${m.id}`} onClick={() => setActive(m)}>
-                      <img src={mediaFileUrl ? mediaFileUrl(m.id) : ""} alt={m.filename} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
+                      <img src={m.thumbnail_url || m.download_url || ""} alt={m.original_filename} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"/>
                       {m.media_type === "video" && (
                         <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 z-10">
                           <Play size={10} strokeWidth={3} className="text-white"/> Video
@@ -391,7 +391,7 @@ export default function GroupDetail() {
                         <Heart size={16} strokeWidth={2.5} className={m.favorited ? "fill-red-500 text-red-500" : "text-white"}/>
                       </button>
                       <div className="absolute bottom-0 left-0 right-0 p-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end">
-                        <div className="text-xs font-medium text-white truncate max-w-full drop-shadow-md">{m.filename}</div>
+                        <div className="text-xs font-medium text-white truncate max-w-full drop-shadow-md">{m.original_filename}</div>
                         {!groupByUser && <div className="text-[10px] text-white/70 truncate drop-shadow-md mt-0.5">by {m.uploader?.name}</div>}
                       </div>
                     </div>
@@ -418,17 +418,17 @@ export default function GroupDetail() {
           </div>
           <div className="max-w-[90vw] max-h-[85vh]" onClick={e => e.stopPropagation()}>
             {active.media_type === "video" ? (
-              <video src={mediaFileUrl ? mediaFileUrl(active.id) : ""} controls autoPlay className="max-w-full max-h-[85vh]"/>
+              <video src={active.download_url || ""} controls autoPlay className="max-w-full max-h-[85vh]"/>
             ) : (
-              <img src={mediaFileUrl ? mediaFileUrl(active.id) : ""} alt={active.filename} className="max-w-full max-h-[85vh] object-contain"/>
+              <img src={active.download_url || active.thumbnail_url || ""} alt={active.original_filename} className="max-w-full max-h-[85vh] object-contain"/>
             )}
           </div>
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" onClick={e => e.stopPropagation()}>
             <button onClick={() => toggleFav(active.id).then(() => setActive(prev => ({ ...prev, favorited: !prev.favorited })))} className="px-4 h-10 border border-white/40 text-white flex items-center gap-2 hover:border-white" data-testid="lightbox-fav">
               <Heart size={14} className={active.favorited ? "fill-current accent-text" : ""}/> {active.favorited ? "Favorited" : "Favorite"}
             </button>
-            <button onClick={() => downloadOne(active.id, active.filename)} className="px-4 h-10 border border-white/40 text-white flex items-center gap-2 hover:border-white" data-testid="lightbox-download"><Download size={14}/> Download</button>
-            {(isAdmin || active.uploader_id === user?.user_id) && (
+            <button onClick={() => downloadOne(active.id, active.original_filename)} className="px-4 h-10 border border-white/40 text-white flex items-center gap-2 hover:border-white" data-testid="lightbox-download"><Download size={14}/> Download</button>
+            {(isAdmin || active.uploader_id === (user?.user_id ?? user?.id)) && (
               <button onClick={() => removeMedia(active.id)} className="px-4 h-10 border border-white/40 text-white flex items-center gap-2 hover:accent-border" data-testid="lightbox-delete"><Trash2 size={14}/> Delete</button>
             )}
           </div>
