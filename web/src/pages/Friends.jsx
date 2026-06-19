@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { UserPlus, User, Check, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Friends() {
   const [friends, setFriends] = useState([]);
   const [inbox, setInbox] = useState([]);
+  const navigate = useNavigate();
 
   const loadData = async () => {
     try {
@@ -155,7 +157,7 @@ export default function Friends() {
                       <p className="text-xs text-muted font-mono mt-0.5">#{f.friend_code}</p>
                     </div>
                   </div>
-                  <Button variant="secondary" className="w-full opacity-0 group-hover:opacity-100 transition-opacity">Plan a trip</Button>
+                  <Button variant="secondary" className="w-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => navigate('/dashboard')}>Plan a trip</Button>
                 </div>
               ))}
             </div>

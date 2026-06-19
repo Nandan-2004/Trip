@@ -195,10 +195,11 @@ export default function GroupDetail() {
     } catch { toast.error("Zip failed"); }
   };
 
-  const sendInvite = async () => {
-    if (!/^\d{6}$/.test(inviteCode)) { toast.error("Enter 6-digit code"); return; }
+  const sendInvite = async (codeToUse) => {
+    const code = typeof codeToUse === 'string' ? codeToUse : inviteCode;
+    if (!/^\d{6}$/.test(code)) { toast.error("Enter 6-digit code"); return; }
     try {
-      await api(`/groups/${groupId}/invites`, { method: "POST", body: { friend_code: inviteCode } });
+      await api(`/groups/${groupId}/invites`, { method: "POST", body: { friend_code: code } });
       toast.success("Invite sent");
       setInviteCode(""); setInviteOpen(false);
     } catch (e) { toast.error(e.message || "Failed"); }
@@ -272,7 +273,7 @@ export default function GroupDetail() {
                               <div className="font-bold text-sm">{f.name}</div>
                               <div className="text-xs text-muted-foreground font-mono">{f.friend_code}</div>
                             </div>
-                            <Button size="sm" onClick={() => { setInviteCode(f.friend_code); setTimeout(sendInvite, 0); }} className="rounded-none accent-bg">Invite</Button>
+                            <Button size="sm" onClick={() => sendInvite(f.friend_code)} className="rounded-none accent-bg">Invite</Button>
                           </div>
                         ))
                       )}
